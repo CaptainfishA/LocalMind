@@ -26,6 +26,15 @@ def sha256(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def long_windows_path(path: Path) -> Path:
+    value = str(path)
+    if value.startswith("\\\\?\\"):
+        return path
+    if value.startswith("\\\\"):
+        return Path("\\\\?\\UNC\\" + value[2:])
+    return Path("\\\\?\\" + value)
+
+
 def build_windows_zip(wheel: Path, output: Path) -> None:
     if sysconfig.get_platform() != "win-amd64" or sys.version_info[:2] != (3, 13):
         raise SystemExit("Building this release requires 64-bit Windows and Python 3.13.")
@@ -35,8 +44,11 @@ def build_windows_zip(wheel: Path, output: Path) -> None:
     if not compiler.is_file():
         raise SystemExit("The .NET Framework x64 C# compiler is required to build LocalMind.exe.")
 
-    with tempfile.TemporaryDirectory(prefix="lm-") as directory:
+    temp_parent = Path(tempfile.gettempdir()).resolve()
+    # Qt wheels contain nested resources that can exceed MAX_PATH during extraction and cleanup.
+    with tempfile.TemporaryDirectory(prefix="lm-", dir=long_windows_path(temp_parent)) as directory:
         staging = Path(directory)
+        ordinary_staging = temp_parent / staging.name
         package = staging / "LocalMind"
         runtime = package / "runtime"
         archive = staging / "python.zip"
@@ -54,14 +66,20 @@ def build_windows_zip(wheel: Path, output: Path) -> None:
             "python313.zip\n.\nLib\nLib/site-packages\nimport site\n", encoding="ascii"
         )
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--no-compile", "--target", str(site_packages), str(wheel)],
+            [
+                sys.executable, "-m", "pip", "install", "--no-compile", "--target",
+                str(ordinary_staging / "packages"), str(wheel),
+            ],
             check=True,
         )
+        site_packages.parent.mkdir(exist_ok=True)
+        (staging / "packages").rename(site_packages)
         shutil.copy2(ROOT / "LICENSE", package / "LICENSE")
         shutil.copy2(ROOT / "README.md", package / "README.md")
         shutil.copy2(ROOT / "scripts/smoke_windows.py", runtime / "smoke_windows.py")
 
-        launcher = package / "LocalMind.exe"
+        # The .NET Framework tools accept the ordinary path to this shallow entry point.
+        launcher = ordinary_staging / "LocalMind" / "LocalMind.exe"
         subprocess.run(
             [
                 str(compiler), "/nologo", "/utf8output", "/target:winexe", "/platform:x64",
@@ -75,13 +93,13 @@ def build_windows_zip(wheel: Path, output: Path) -> None:
             smoke_env.pop(name, None)
         smoke_env.update(
             PATH=os.pathsep.join([str(system_root / "System32"), str(system_root)]),
-            LOCALAPPDATA=str(staging / "appdata"),
+            LOCALAPPDATA=str(ordinary_staging / "appdata"),
             QT_QPA_PLATFORM="offscreen",
             HF_HUB_OFFLINE="1",
             PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK="True",
         )
         print("Testing the packaged launcher and its runtime", flush=True)
-        subprocess.run([str(launcher), "--smoke-test"], cwd=staging, env=smoke_env, check=True, timeout=180)
+        subprocess.run([str(launcher), "--smoke-test"], cwd=ordinary_staging, env=smoke_env, check=True, timeout=180)
 
         # Use the destination filesystem so the completed ZIP can be moved atomically.
         with tempfile.TemporaryDirectory(prefix="lm-zip-", dir=output.parent) as zip_directory:
