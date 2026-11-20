@@ -1,5 +1,5 @@
 numpy>=1.26,<2.4
-PySide6>=6.8
+PySide6>=6.8,<6.12
 faiss-cpu>=1.14
 sentence-transformers[onnx]>=5.0
 jieba>=0.42.1

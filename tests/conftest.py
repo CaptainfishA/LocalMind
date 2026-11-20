@@ -1,5 +1,6 @@
 """Keep Qt resources and deferred widget destruction within one application."""
 
+import gc
 import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -17,9 +18,10 @@ def qt_application():
     existing_app = QApplication.instance()
     app = existing_app or QApplication([])
     yield app
+    if existing_app is None:
+        app.closeAllWindows()
+    gc.collect()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     app.processEvents()
-    # Release Python-owned Qt resources before interpreter shutdown unloads Qt.
+    # Drop cached Qt objects while the application is still alive.
     icon.cache_clear()
-    if existing_app is None:
-        app.shutdown()

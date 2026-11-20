@@ -46,3 +46,5 @@ python scripts/build_windows.py dist/release
 ```
 
 Windows ZIP 内含 CPython 和 wheel 声明的依赖，默认按 CPU 环境验证。构建会检查 Python 下载的 SHA-256，并实际启动 ZIP 内的入口程序，在临时数据库里验证运行库、窗口和图标。模型权重与 Alpha / WeFlow 由用户按需另行获取。Windows 启动器目前未做 Authenticode 签名。
+
+PySide6 目前限制在 6.12 之前。Windows 回归在 6.12 上曾于 Qt 退出时崩溃。升级时同时验证全量回归和运行包启动。
