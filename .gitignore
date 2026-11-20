@@ -1,0 +1,40 @@
+# Local credentials, indexes and generated validation data
+.alpha/
+.agents/
+.codex/
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite*
+*.faiss
+*.log
+.pt-*/
+.pytest*/
+benchmarks/results/
+benchmarks/artifacts/
+benchmarks/datasets/
+benchmarks/raw/
+
+# Local development notes and presentation materials
+/development_doc/
+/ppt_material/
+
+# Python and build output
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+*.spec
+.coverage
+htmlcov/
+
+# Desktop and editor state
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
