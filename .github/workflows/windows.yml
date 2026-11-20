@@ -67,7 +67,7 @@ jobs:
       - name: Check installed dependencies
         run: python -m pip check
       - name: Test the installed wheel
-        run: python -m pytest -o pythonpath=
+        run: python -X faulthandler -m pytest -o pythonpath=
       - name: Build and smoke-test the Windows ZIP
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
         run: python scripts/build_windows.py dist/release
