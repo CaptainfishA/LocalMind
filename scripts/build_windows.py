@@ -76,6 +76,9 @@ def build_windows_zip(wheel: Path, output: Path) -> None:
         (staging / "packages").rename(site_packages)
         shutil.copy2(ROOT / "LICENSE", package / "LICENSE")
         shutil.copy2(ROOT / "README.md", package / "README.md")
+        logo = Path("docs/assets/localmind-logo.png")
+        (package / logo).parent.mkdir(parents=True)
+        shutil.copy2(ROOT / logo, package / logo)
         shutil.copy2(ROOT / "scripts/smoke_windows.py", runtime / "smoke_windows.py")
 
         # The .NET Framework tools accept the ordinary path to this shallow entry point.

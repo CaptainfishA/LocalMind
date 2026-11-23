@@ -1,4 +1,5 @@
 include environment.yml requirements.txt RELEASING.md
+include docs/assets/localmind-logo.png
 include .github/workflows/windows.yml
 include scripts/build_windows.py scripts/smoke_windows.py scripts/LocalMindLauncher.cs
 include benchmarks/chat_context_probe_support.py benchmarks/rerank_evidence_variants.py benchmarks/preview_desktop.py
